@@ -39,13 +39,11 @@ function ltree {
 function scrcpy {
     Start-Process "D:\Scrcpy\scrcpy.exe"
 }
-function Aseprite {
-    Start-Process 
-}
 
 # ----- Useful Shortcuts -----
 function .. { Set-Location .. }
 function ... { Set-Location ../.. }
+function lsf { ls -Force }
 
 function mkf {
     param (
@@ -62,6 +60,96 @@ function mkf {
 
 function cl {
     clear
+}
+
+function NewWebProject {
+    param (
+        [string]$projectName
+    )
+
+    if (-not $projectName) {
+        Write-Host "❌ Bạn phải cung cấp tên dự án."
+        return
+    }
+
+    # Tạo thư mục gốc
+    New-Item -Path $projectName -ItemType Directory -Force | Out-Null
+    Set-Location $projectName
+
+    # ====== Tạo file HTML ======
+    $htmlTemplate = @"
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$projectName</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <h1>Xin chào, đây là $projectName</h1>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
+"@
+
+    Set-Content -Path "index.html" -Value $htmlTemplate
+    Set-Content -Path "about.html" -Value "<h1>About Page</h1>"
+    Set-Content -Path "contact.html" -Value "<h1>Contact Page</h1>"
+
+    # ====== File cấu hình và tài liệu ======
+    Set-Content -Path "package.json" -Value "{`n  `"name`": `"$projectName`",`n  `"version`": `"1.0.0`"`n}"
+    Set-Content -Path "README.md" -Value "# $projectName`nWebsite HTML/CSS/JS cơ bản."
+    New-Item -Name ".gitignore" -ItemType File -Force | Out-Null
+    New-Item -Name "LICENSE" -ItemType File -Force | Out-Null
+
+    # ====== Tạo thư mục assets ======
+    New-Item -Path "assets/css" -ItemType Directory -Force | Out-Null
+    New-Item -Path "assets/js" -ItemType Directory -Force | Out-Null
+    New-Item -Path "assets/img" -ItemType Directory -Force | Out-Null
+    New-Item -Path "assets/fonts" -ItemType Directory -Force | Out-Null
+    New-Item -Path "assets/icons" -ItemType Directory -Force | Out-Null
+
+    # CSS template
+    $cssTemplate = @"
+/* Reset cơ bản */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Style mặc định */
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f4f9;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+}
+"@
+    Set-Content -Path "assets/css/style.css" -Value $cssTemplate
+    New-Item -Path "assets/css/components.css" -ItemType File -Force | Out-Null
+
+    # JS template
+    $jsTemplate = @"
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 $projectName đã sẵn sàng!');
+});
+"@
+    Set-Content -Path "assets/js/main.js" -Value $jsTemplate
+    New-Item -Path "assets/js/utils.js" -ItemType File -Force | Out-Null
+
+    # ====== Các thư mục khác ======
+    New-Item -Path "vendor/bootstrap" -ItemType Directory -Force | Out-Null
+    New-Item -Path "vendor/aos" -ItemType Directory -Force | Out-Null
+
+    New-Item -Path "docs" -ItemType Directory -Force | Out-Null
+    New-Item -Path "dist" -ItemType Directory -Force | Out-Null
+    New-Item -Path "tests" -ItemType Directory -Force | Out-Null
+    New-Item -Path "tests/main.test.js" -ItemType File -Force | Out-Null
+
+    Write-Host "✅ Dự án '$projectName' đã được tạo thành công!"
 }
 
 # ----- Welcome Message -----
