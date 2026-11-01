@@ -43,9 +43,9 @@ Mọi tham số truyền thêm đều được chuyển tiếp cho `git`, ví d�
 |---|---|
 | `..`  | Lên thư mục cha. |
 | `...` | Lên 2 cấp thư mục. |
-| `lsf` | Liệt kê file, gồm cả file ẩn (`ls -Force`). |
+| `lsf [đường-dẫn]` | Liệt kê file, gồm cả file ẩn (`Get-ChildItem -Force`). |
 | `ltree [depth]` | Hiển thị cây thư mục bằng `lsd` kèm icon. Không truyền `depth` thì mặc định là 3. |
-| `mkf <tên-file>` | Tạo file mới (tạo luôn thư mục cha nếu chưa có). |
+| `mkf <tên-file>` | Tạo file mới (tạo luôn thư mục cha nếu chưa có). Nếu file đã tồn tại thì giữ nguyên nội dung, chỉ cập nhật thời gian sửa. |
 | `cl`  | Xoá màn hình (`clear`). |
 | `z <từ-khoá>` | Nhảy tới thư mục hay truy cập nhất khớp với từ khoá (module **z**, xem bên dưới). |
 
@@ -53,10 +53,10 @@ Mọi tham số truyền thêm đều được chuyển tiếp cho `git`, ví d�
 
 | Lệnh | Mô tả |
 |---|---|
-| `scrcpy` | Mở `D:\Scrcpy\scrcpy.exe` để mirror màn hình Android. |
-| `NewWebProject <tên-dự-án>` | Tạo khung dự án web HTML/CSS/JS rồi `cd` vào thư mục đó. |
+| `scrcpy [tham-số]` | Mở scrcpy để mirror màn hình Android. Dùng bản trong `PATH`, nếu không có thì dùng `D:\Scrcpy\scrcpy.exe`. Tham số được chuyển tiếp, ví dụ `scrcpy --turn-screen-off`. |
+| `NewWebProject <tên-dự-án>` | Tạo khung dự án web HTML/CSS/JS rồi `cd` vào thư mục đó. Từ chối chạy nếu thư mục đã tồn tại và có nội dung. |
 
-`NewWebProject` tạo ra cấu trúc sau:
+`NewWebProject` tạo ra cấu trúc sau (trường `name` trong `package.json` được chuyển sang dạng npm hợp lệ, ví dụ `My Web App` → `my-web-app`):
 
 ```
 <tên-dự-án>/
@@ -86,19 +86,17 @@ Mọi tham số truyền thêm đều được chuyển tiếp cho `git`, ví d�
 
 ### PSFzf 2.6.10
 
-Bọc [fzf](https://github.com/junegunn/fzf) cho PowerShell. Khi import, module gán phím tắt PSReadLine sau (chỉ gán nếu phím đó chưa bị PSReadLine dùng):
+Bọc [fzf](https://github.com/junegunn/fzf) cho PowerShell. Phím tắt đang bật:
 
 | Phím | Chức năng |
 |---|---|
 | `Ctrl+t` | Chọn file/đường dẫn bằng fzf và chèn vào dòng lệnh. |
-| `Ctrl+r` | Tìm lệnh trong lịch sử bằng fzf. |
+| `Ctrl+r` | Tìm lệnh trong lịch sử bằng fzf (bật qua `Set-PsFzfOption` trong profile). |
 | `Alt+c`  | Chọn thư mục bằng fzf rồi `cd` vào đó. |
-| `Alt+a`  | Tìm tham số đã dùng trong lịch sử lệnh. |
 
-`Ctrl+r` và `Tab` mặc định đã được PSReadLine dùng nên sẽ giữ hành vi cũ. Muốn dùng fzf cho các phím này, thêm vào profile:
+`Tab` và `Alt+a` vẫn giữ hành vi mặc định của PSReadLine. Muốn dùng fzf cho `Tab`, thêm vào profile:
 
 ```powershell
-Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
 Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion }
 ```
 
@@ -141,7 +139,7 @@ z -clean       # Xoá các đường dẫn không còn tồn tại
 - Một [Nerd Font](https://www.nerdfonts.com/) (ví dụ FiraCode Nerd Font), đặt làm font của terminal để hiện icon
 - [fzf](https://github.com/junegunn/fzf) có trong `PATH` — `winget install junegunn.fzf`
 - [lsd](https://github.com/lsd-rs/lsd) cho lệnh `ltree` — `winget install lsd-rs.lsd`
-- [scrcpy](https://github.com/Genymobile/scrcpy) đặt tại `D:\Scrcpy\` (nếu dùng lệnh `scrcpy`)
+- [scrcpy](https://github.com/Genymobile/scrcpy) nếu dùng lệnh `scrcpy` — `winget install Genymobile.scrcpy` hoặc giải nén vào `D:\Scrcpy\`
 
 ## Cài đặt trên máy mới
 
@@ -149,10 +147,4 @@ z -clean       # Xoá các đường dẫn không còn tồn tại
 git clone <url-repo> "$HOME\Documents\PowerShell"
 ```
 
-Thư mục `Modules/z/1.1.14` được lưu dưới dạng tham chiếu tới một repo git khác (không có `.gitmodules`), nên sau khi clone thư mục này sẽ trống. Cài lại module z bằng:
-
-```powershell
-Install-Module z -AllowClobber -Scope CurrentUser
-```
-
-Mở lại terminal để profile được nạp.
+Cả ba module PSFzf, Terminal-Icons và z đều nằm sẵn trong repo, không cần `Install-Module`. Mở lại terminal để profile được nạp.

@@ -19,6 +19,8 @@ Set-PSReadLineOption -Colors @{ InLinePrediction = "DarkGray" }
 # ----- Git Functions (instead of alias) -----
 function gs { git status @args }
 function gco { git checkout @args }
+# "gl" là alias có sẵn của Get-Location và alias được ưu tiên hơn function, nên phải gỡ trước
+Remove-Alias gl -Force -ErrorAction SilentlyContinue
 function gl { git log --oneline --graph --all @args }
 function gb { git branch @args }
 function gf { git fetch origin @args }
@@ -37,13 +39,29 @@ function ltree {
     lsd --tree --depth $depth --icon always
 }
 function scrcpy {
-    Start-Process "D:\Scrcpy\scrcpy.exe"
+    # Ưu tiên scrcpy trong PATH, nếu không có thì dùng bản ở D:\Scrcpy
+    $exe = Get-Command scrcpy -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Source
+    if (-not $exe -and (Test-Path "D:\Scrcpy\scrcpy.exe")) {
+        $exe = "D:\Scrcpy\scrcpy.exe"
+    }
+
+    if (-not $exe) {
+        Write-Host "❌ Không tìm thấy scrcpy. Cài bằng: winget install Genymobile.scrcpy"
+        return
+    }
+
+    if ($args) {
+        Start-Process $exe -ArgumentList $args
+    }
+    else {
+        Start-Process $exe
+    }
 }
 
 # ----- Useful Shortcuts -----
 function .. { Set-Location .. }
 function ... { Set-Location ../.. }
-function lsf { ls -Force }
+function lsf { Get-ChildItem -Force @args }
 
 function mkf {
     param (
@@ -52,6 +70,13 @@ function mkf {
 
     if (-not $FileName) {
         Write-Error "Bạn phải cung cấp tên file."
+        return
+    }
+
+    # New-Item -Force sẽ xoá trắng file đã có, nên file tồn tại thì chỉ cập nhật thời gian sửa
+    if (Test-Path -LiteralPath $FileName) {
+        (Get-Item -LiteralPath $FileName).LastWriteTime = Get-Date
+        Write-Host "File '$FileName' đã tồn tại, giữ nguyên nội dung."
         return
     }
 
@@ -71,6 +96,15 @@ function NewWebProject {
         Write-Host "❌ Bạn phải cung cấp tên dự án."
         return
     }
+
+    # Không tạo đè lên thư mục đã có nội dung, tránh ghi đè index.html, README.md, .gitignore...
+    if ((Test-Path -LiteralPath $projectName) -and (Get-ChildItem -LiteralPath $projectName -Force | Select-Object -First 1)) {
+        Write-Host "❌ Thư mục '$projectName' đã tồn tại và không trống."
+        return
+    }
+
+    # npm chỉ chấp nhận tên viết thường, không dấu cách, không ký tự đặc biệt
+    $packageName = ($projectName.ToLower() -replace '[^a-z0-9._-]+', '-').Trim('-', '.', '_')
 
     # Tạo thư mục gốc
     New-Item -Path $projectName -ItemType Directory -Force | Out-Null
@@ -98,7 +132,7 @@ function NewWebProject {
     Set-Content -Path "contact.html" -Value "<h1>Contact Page</h1>"
 
     # ====== File cấu hình và tài liệu ======
-    Set-Content -Path "package.json" -Value "{`n  `"name`": `"$projectName`",`n  `"version`": `"1.0.0`"`n}"
+    Set-Content -Path "package.json" -Value "{`n  `"name`": `"$packageName`",`n  `"version`": `"1.0.0`"`n}"
     Set-Content -Path "README.md" -Value "# $projectName`nWebsite HTML/CSS/JS cơ bản."
     New-Item -Name ".gitignore" -ItemType File -Force | Out-Null
     New-Item -Name "LICENSE" -ItemType File -Force | Out-Null
@@ -167,7 +201,9 @@ Import-Module z
 # NEW: fzf - Fuzzy finder
 # =========================
 
-    Import-Module PSFzf
+Import-Module PSFzf
+# Mặc định PSFzf không ghi đè Ctrl+r của PSReadLine, nên phải chỉ định rõ để tìm lịch sử bằng fzf
+Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
 
 
 # =========================
